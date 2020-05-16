@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Param, Patch, Delete } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { NewPruductDTO } from './products.dto'
+import { Product } from './product.model'
 
 
 @Controller('products')
@@ -9,13 +10,15 @@ export class ProductsController {
     constructor(private readonly productsService: ProductsService) {
     }
     @Post()
-    insertProduct(@Body() newProduct: NewPruductDTO): any {
-        return this.productsService.insertProduct(newProduct)
+    async insertProduct(@Body() newProduct: NewPruductDTO) {
+        const generatedId = await this.productsService.insertProduct(newProduct)
+        return { generatedId }
     }
 
     @Get()
-    getAllProducts(): any {
-        return { data: this.productsService.getAllProducts() }
+    async getAllProducts() {
+        const products = await this.productsService.getAllProducts()
+        return products
     }
 
     @Get(':id')
