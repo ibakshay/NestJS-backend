@@ -13,9 +13,9 @@ export class ProductsService {
 
     private products: Product[] = []
 
-    updateProduct(product: NewPruductDTO, produdctId: string): any {
-        const [existingProduct, index] = this.findProduct(produdctId)
-        const updatedProduct = { ...existingProduct }
+    async updateProduct(product: NewPruductDTO, productId: string): Promise<Product> {
+        // const [existingProduct, index] = this.findProduct(produdctId)
+        const updatedProduct = await this.fetchProduct(productId)
         if (product.title) {
             updatedProduct.title = product.title
         }
@@ -25,16 +25,15 @@ export class ProductsService {
         if (product.price) {
             updatedProduct.price = product.price
         }
-        this.products[index] = updatedProduct
 
-
+        updatedProduct.save()
+        return updatedProduct
 
     }
 
-    getSingleProduct(productId: string): any {
-        const product = this.findProduct(productId)[0]
-
-        return { ...product }
+    async getSingleProduct(productId: string): Promise<Product> {
+        const product = await this.fetchProduct(productId)
+        return product as Product
 
     }
 
@@ -42,9 +41,10 @@ export class ProductsService {
         const response = await this.productModel.find().exec()
         const transformedResponse = response.map((product) => {
             return {
+                _id: product._id,
                 title: product.title,
                 description: product.description,
-                price: product.price
+                price: product.price,
             }
         })
         return transformedResponse
@@ -56,17 +56,29 @@ export class ProductsService {
         return result._id as string
     }
 
-    deleteProduct(productId: string): any {
-        const index = this.findProduct(productId)[1]
-        this.products.splice(index, 1)
+    async deleteProduct(productId: string): Promise<any> {
+        const product = await this.productModel.deleteOne({ _id: productId })
+        return "deleted"
+        //this.products.splice(index, 1)
     }
 
     private findProduct(productId: string): [Product, number] {
+        //const productIndex = this.products.findIndex(product => product.id === productId)
         const productIndex = this.products.findIndex(product => product.title === productId)
         const product = this.products[productIndex]
         if (!product) {
             throw new NotFoundException('Product not found')
         }
         return [product, productIndex]
+    }
+    private async fetchProduct(productId: string): Promise<Product> {
+        let product
+        try {
+            product = await this.productModel.findById(productId)
+        } catch (error) {
+
+            throw new NotFoundException('product not found')
+        }
+        return product
     }
 }
